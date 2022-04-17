@@ -119,6 +119,38 @@ Field []byte `llsd:",base85"`
 As a convenience, **go-llsd** will attempt to use `json` [tags][json] if `llsd` is not
 specified.
 
+### Customizing marshaling/unmarshaling
+
+You may define custom marshaling/unmarshaling behavior for scalar types by
+implementing the appropriate Unmarshaler/Marshaler interface.
+
+```go
+// TextUnmarshaler is the interface implemented by types that want to
+// customize how text (xml, notation) LLSD values are unmarshaled into
+// themselves.
+type TextUnmarshaler interface {
+	UnmarshalTextLLSD([]byte) error
+}
+
+// TextMarshaler is the interface implemented by types that want to
+// customize how text (xml, notation) LLSD values are marshaled into
+// text.
+type TextMarshaler interface {
+	MarshalTextLLSD() (llsd.ScalarType, string, error)
+}
+```
+
+For example, to define a type that parses CSV values from LLSD `string`:
+```go
+type csv []string
+
+func (c *csv) UnmarshalTextLLSD(b []byte) error {
+	v := strings.Split(string(b), ",")
+	*c = append(*c, v...)
+	return nil
+}
+```
+
 ### Notes on behavior
 
 - Using fixed-length arrays causes extra values to be ignored 
