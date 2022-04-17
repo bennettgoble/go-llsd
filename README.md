@@ -119,7 +119,7 @@ Field []byte `llsd:",base85"`
 As a convenience, **go-llsd** will attempt to use `json` [tags][json] if `llsd` is not
 specified.
 
-### Customizing marshaling/unmarshaling
+### Custom marshaling/unmarshaling
 
 You may define custom marshaling/unmarshaling behavior for scalar types by
 implementing the appropriate Unmarshaler/Marshaler interface.
@@ -148,6 +148,10 @@ func (c *csv) UnmarshalTextLLSD(b []byte) error {
 	v := strings.Split(string(b), ",")
 	*c = append(*c, v...)
 	return nil
+}
+
+func (c *csv) MarshalTextLLSD() (llsd.ScalarType, string, error) {
+    return llsd.String, strings.Join(*c, ","), nil
 }
 ```
 
