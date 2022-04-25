@@ -283,7 +283,8 @@ func (c *XMLEncoder) marshalValue(v reflect.Value, info *fieldInfo) error {
 func (e *XMLEncoder) writeBytes(b []byte, encoding string) error {
 	switch encoding {
 	case Base16:
-		e.writeString(hex.EncodeToString(b))
+		// write upper case as the llbase python module expects it
+		e.writeString(strings.ToUpper(hex.EncodeToString(b)))
 	case Base64:
 		e.writeString(base64.StdEncoding.EncodeToString(b))
 	case Base85:

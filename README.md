@@ -155,6 +155,18 @@ func (c *csv) MarshalTextLLSD() (llsd.ScalarType, string, error) {
 }
 ```
 
+### Binary support
+
+Binary LLSD can be parsed using methods similar to XML:
+```go
+var dst MyType
+
+err := llsd.UnmarshalBinary(data, &dst)
+if err != nil {
+    panic(err)
+}
+```
+
 ### Notes on behavior
 
 - Using fixed-length arrays causes extra values to be ignored 

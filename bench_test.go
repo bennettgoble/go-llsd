@@ -26,7 +26,7 @@ var bytesLLSD []byte
 var resultLLSD testElement
 
 func codeInit() {
-	f, err := os.Open("testdata/data.xml.gz")
+	f, err := os.Open("testdata/bench.xml.gz")
 	if err != nil {
 		panic(err)
 	}

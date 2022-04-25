@@ -68,7 +68,8 @@ func (s *XMLScanner) Token() (Token, error) {
 
 			return key, err
 		case "llsd":
-			return DocumentStart{}, nil
+			// Skip document start
+			return s.Token()
 		default:
 			scalarTypes := map[string]ScalarType{
 				"string":  String,
@@ -115,17 +116,13 @@ func (s *XMLScanner) Token() (Token, error) {
 		case "map":
 			return MapEnd{}, nil
 		case "llsd":
-			return DocumentEnd{}, nil
+			return s.Token()
 		default:
 			return nil, errors.New(fmt.Sprintf("Invalid LLSD: unexpected EndElement %s", ty.Name.Local))
 		}
-	case xml.Comment:
+	case xml.Comment, xml.ProcInst, xml.CharData:
 		// Skip comments, (<!-- ... -->)
-		return s.Token()
-	case xml.ProcInst:
 		// Skip XML processing instructions, (<xml ... >)
-		return s.Token()
-	case xml.CharData:
 		// Skip character data between elements such as whitespace
 		return s.Token()
 	default:

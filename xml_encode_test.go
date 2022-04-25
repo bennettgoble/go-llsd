@@ -25,7 +25,7 @@ func TestXMLMarshal(t *testing.T) {
 		},
 		{
 			v:        struct{ A []byte }{A: []byte("Binary data")},
-			expected: "<map><key>A</key><binary>42696e6172792064617461</binary></map>",
+			expected: "<map><key>A</key><binary>42696E6172792064617461</binary></map>",
 		},
 		{
 			v:        struct{ A URL }{A: "https://example.org/"},
@@ -107,7 +107,7 @@ func TestXMLEncoding(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := "<llsd><map><key>A</key><binary>42696e6172792064617461</binary></map></llsd>"
+	expected := "<llsd><map><key>A</key><binary>42696E6172792064617461</binary></map></llsd>"
 	if !strings.Contains(string(b), expected) {
 		t.Fatalf("Expected %s, got %s", expected, string(b))
 	}

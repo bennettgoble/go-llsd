@@ -3,9 +3,11 @@ package llsd
 import (
 	"encoding/ascii85"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -56,8 +58,6 @@ func (t ScalarType) String() string {
 	}
 }
 
-type DocumentStart struct{}
-type DocumentEnd struct{}
 type ArrayStart struct{}
 type ArrayEnd struct{}
 type MapStart struct{}
@@ -163,4 +163,45 @@ func (d *textDecoder) date(c []byte) (time.Time, error) {
 		return time.Unix(0, 0), nil
 	}
 	return time.Parse(time.RFC3339, string(c))
+}
+
+type binaryDecoder struct{}
+
+func (d *binaryDecoder) real(b []byte) (float64, error) {
+	// Default value = 0.0
+	if len(b) == 0 || b == nil {
+		return 0.0, nil
+	}
+	bits := binary.BigEndian.Uint64(b)
+	return math.Float64frombits(bits), nil
+}
+
+func (d *binaryDecoder) uuid(b []byte) (UUID, error) {
+	// Default value = 00000000-00000000-00000000-00000000
+	if len(b) == 0 || b == nil {
+		return [16]byte{}, nil
+	}
+	var u UUID
+	copy(u[:], b[:16])
+	return u, nil
+}
+
+func (d *binaryDecoder) integer(b []byte) (int64, error) {
+	return int64(binary.BigEndian.Uint32(b)), nil
+}
+
+func (d *binaryDecoder) binary(b []byte, encoding string) ([]byte, error) {
+	return b, nil
+}
+
+func (d *binaryDecoder) boolean(b []byte) (bool, error) {
+	return len(b) > 1, nil
+}
+
+func (d *binaryDecoder) date(b []byte) (time.Time, error) {
+	epoch, err := d.integer(b)
+	if err != nil {
+		return time.Unix(0, 0), err
+	}
+	return time.Unix(epoch, 0), nil
 }

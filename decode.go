@@ -72,20 +72,18 @@ type TextMarshaler interface {
 	MarshalTextLLSD() (ScalarType, string, error)
 }
 
+// TextMarshaler is the interface implemented by types that want to
+// customize how text (xml, notation) LLSD values are marshaled into
+// text.
+type BinaryMarshaler interface {
+	MarshalBinaryLLSD() (ScalarType, []byte, error)
+}
+
 // Unmarshal decodes LLSD into a given value.
 func (u *Unmarshaler) Unmarshal(v any) error {
 	val := reflect.ValueOf(v)
 	if val.Kind() != reflect.Pointer {
 		return errors.New("Non-pointer passed to Unmarshal")
-	}
-
-	// Read presumed DocumentStart
-	if err := u.next(); err != nil {
-		return err
-	}
-
-	if _, ok := u.tok.(DocumentStart); !ok {
-		return &InvalidLLSDError{Problem: "missing document start.", Offset: u.scan.Offset()}
 	}
 
 	// Read first value
@@ -594,7 +592,17 @@ func UnmarshalXML(data []byte, v any) error {
 	return NewXMLDecoder(bytes.NewReader(data)).Unmarshal(v)
 }
 
+// UnmarshalBinary attempts to deserialize given LLSD binary data into a given value.
+func UnmarshalBinary(data []byte, v any) error {
+	return NewBinaryDecoder(bytes.NewReader(data)).Unmarshal(v)
+}
+
 // NewXMLDecoder creates a new instance of an Unmarshaler configured to read LLSD XML.
 func NewXMLDecoder(r io.Reader) *Unmarshaler {
 	return &Unmarshaler{scan: NewXMLScanner(r), tok: nil, dec: &textDecoder{}, text: true}
+}
+
+// NewBinaryDecoder creates a new instance of an Unmarshaler configured to read binary LLSD.
+func NewBinaryDecoder(r io.Reader) *Unmarshaler {
+	return &Unmarshaler{scan: NewBinaryScanner(r), tok: nil, dec: &binaryDecoder{}, text: false}
 }

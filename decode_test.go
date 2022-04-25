@@ -93,18 +93,9 @@ func TestNext(t *testing.T) {
 	}
 }
 
-func TestNoStartDocument(t *testing.T) {
-	var dst struct{}
-	dec := newMockDecoder(1)
-	err := dec.Unmarshal(&dst)
-	if !errorContains(err, "Invalid LLSD: missing document start.") {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
 func TestInvalidKey(t *testing.T) {
 	var dst string
-	dec := newMockDecoder(DocumentStart{}, Key("a"), DocumentEnd{})
+	dec := newMockDecoder(Key("a"))
 	err := dec.Unmarshal(&dst)
 	if !errorContains(err, "Invalid LLSD: unexpected Key") {
 		t.Errorf("unexpected error: %v", err)
@@ -113,13 +104,13 @@ func TestInvalidKey(t *testing.T) {
 
 func TestInvalidMap(t *testing.T) {
 	var dst struct{ A string }
-	dec := newMockDecoder(DocumentStart{}, MapStart{}, Key("A"), MapEnd{}, DocumentEnd{})
+	dec := newMockDecoder(MapStart{}, Key("A"), MapEnd{})
 	err := dec.Unmarshal(&dst)
 	if !errorContains(err, "Invalid LLSD: unexpected MapEnd") {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	dec = newMockDecoder(DocumentStart{}, MapStart{}, Key("A"), Key("B"), MapEnd{}, DocumentEnd{})
+	dec = newMockDecoder(MapStart{}, Key("A"), Key("B"), MapEnd{})
 	err = dec.Unmarshal(&dst)
 	if !errorContains(err, "Invalid LLSD: unexpected Key") {
 		t.Errorf("unexpected error: %v", err)
@@ -128,7 +119,7 @@ func TestInvalidMap(t *testing.T) {
 
 func TestTruncateArray(t *testing.T) {
 	dst := [2]any{}
-	dec := newMockDecoder(DocumentStart{}, ArrayStart{}, sInt(1), sBinary([]byte("Binary data")), sInt(2), ArrayEnd{}, DocumentEnd{})
+	dec := newMockDecoder(ArrayStart{}, sInt(1), sBinary([]byte("Binary data")), sInt(2), ArrayEnd{})
 	if err := dec.Unmarshal(&dst); err != nil {
 		t.Fatal(err)
 	}

@@ -33,9 +33,54 @@ const xmlStr = `<?xml version="1.0" encoding="UTF-8"?>
 </map>
 </llsd>`
 
+// testScan will compare a list of expected tokens to those it reads from a
+// TokenReader.
+func testScan(t *testing.T, scanner TokenReader, expected []Token) {
+	for i, el := range expected {
+		got, err := scanner.Token()
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotType := reflect.TypeOf(got)
+		elType := reflect.TypeOf(el)
+		if gotType != elType {
+			t.Fatalf("Expected element %d to be type %s, got %s", i, reflect.TypeOf(el), reflect.TypeOf(got))
+		}
+		switch el.(type) {
+		case Key:
+			if el != got {
+				t.Fatalf("Expected key %s=%s", el, got)
+			}
+		case Scalar:
+			expectedScalar := el.(Scalar)
+			gotScalar := got.(Scalar)
+			if expectedScalar.Type != gotScalar.Type {
+				t.Fatalf("Expected element %d to have scalar type %s but got %s", i, expectedScalar.Type, gotScalar.Type)
+			}
+			if bytes.Compare(expectedScalar.Data, gotScalar.Data) != 0 {
+				t.Fatalf("Expected element %d to have value \"%s\" but got \"%s\"", i, expectedScalar.Data, gotScalar.Data)
+			}
+			if len(expectedScalar.Attr) > 0 {
+				for k, v := range expectedScalar.Attr {
+					gotVal, ok := gotScalar.Attr[k]
+					if !ok {
+						t.Fatalf("Expected element %d to have attribute %s", i, k)
+					}
+					if v != gotVal {
+						t.Fatalf("Expected element %d attribute %s to equal %s but got %s", i, k, v, gotVal)
+					}
+				}
+			}
+		}
+	}
+	_, err := scanner.Token()
+	if err != io.EOF {
+		t.Fatalf("Expected EOF")
+	}
+}
+
 func TestXMLScan(t *testing.T) {
 	expected := []Token{
-		DocumentStart{},
 		MapStart{},
 		Key("region_id"),
 		Scalar{Type: UUIDType, Data: []byte("67153d5b-3659-afb4-8510-adda2c034649")},
@@ -63,53 +108,12 @@ func TestXMLScan(t *testing.T) {
 		Scalar{Type: Binary, Data: []byte("6>:=GEd8d<@<>o"), Attr: map[string]string{"encoding": "base85"}},
 		MapEnd{},
 		MapEnd{},
-		DocumentEnd{},
 	}
 	scanner := NewXMLScanner(strings.NewReader(xmlStr))
-	for i, el := range expected {
-		got, err := scanner.Token()
-		if err != nil {
-			t.Fatal(err)
-		}
-		gotType := reflect.TypeOf(got)
-		elType := reflect.TypeOf(el)
-		if gotType != elType {
-			t.Fatalf("Expected element %d to be type %s, got %s", i, reflect.TypeOf(el), reflect.TypeOf(got))
-		}
-		switch el.(type) {
-		case Key:
-			if el != got {
-				t.Fatalf("Expected key %s=%s", el, got)
-			}
-		case Scalar:
-			expectedScalar := el.(Scalar)
-			gotScalar := got.(Scalar)
-			if expectedScalar.Type != gotScalar.Type {
-				t.Fatalf("Expected element %d to have scalar type %s but got %s", i, expectedScalar.Type, gotScalar.Type)
-			}
-			if bytes.Compare(expectedScalar.Data, gotScalar.Data) != 0 {
-				t.Fatalf("Expected element %d to have value %s but got %s", i, expectedScalar.Data, gotScalar.Data)
-			}
-			if len(expectedScalar.Attr) > 0 {
-				for k, v := range expectedScalar.Attr {
-					gotVal, ok := gotScalar.Attr[k]
-					if !ok {
-						t.Fatalf("Expected element %d to have attribute %s", i, k)
-					}
-					if v != gotVal {
-						t.Fatalf("Expected element %d attribute %s to equal %s but got %s", i, k, v, gotVal)
-					}
-				}
-			}
-		}
-	}
-	_, err := scanner.Token()
-	if err != io.EOF {
-		t.Fatalf("Expected EOF")
-	}
+	testScan(t, scanner, expected)
 }
 
-func TestXMLUnmarshalLiteral(t *testing.T) {
+func TestXMLUnmarshalScalar(t *testing.T) {
 	for _, c := range []struct {
 		element   string
 		innerText string
