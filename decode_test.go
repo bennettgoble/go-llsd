@@ -2,131 +2,97 @@ package llsd
 
 import (
 	"bytes"
-	"encoding/hex"
-	"io"
-	"strconv"
-	"strings"
 	"testing"
 )
 
-type mockTokenReader struct {
-	tokens []Token
-	offset int64
-}
-
-func errorContains(got error, want string) bool {
-	if got == nil {
-		return want == ""
-	}
-	if want == "" {
-		return false
-	}
-	return strings.Contains(got.Error(), want)
-}
-
-func sInt(i int) Scalar {
-	return Scalar{
-		Type: Integer,
-		Data: []byte(strconv.Itoa(i)),
-	}
-}
-
-func sBinary(b []byte) Scalar {
-	str := hex.EncodeToString(b)
-	return Scalar{
-		Type: Binary,
-		Data: []byte(str),
-	}
-}
-
-func (r *mockTokenReader) Token() (Token, error) {
-	if len(r.tokens) > 0 {
-		tok := r.tokens[0]
-		err, ok := tok.(error)
-		r.tokens = r.tokens[1:]
-		r.offset++
-		if ok {
-			return nil, err
+func TestTextReal(t *testing.T) {
+	d := &textDecoder{}
+	for _, c := range []struct {
+		val      []byte
+		expected float64
+	}{
+		{val: nil, expected: 0.0},
+		{val: []byte(""), expected: 0.0},
+		{val: []byte("1.0"), expected: 1.0},
+		{val: []byte("-1.0"), expected: -1.0},
+		{val: []byte("0.0"), expected: 0.0},
+	} {
+		got, err := d.real(c.val)
+		if err != nil {
+			t.Fatal(err)
 		}
-		return tok, nil
-	} else {
-		return nil, io.EOF
+		if got != c.expected {
+			t.Fatalf("Expected %f, got %f", c.expected, got)
+		}
 	}
 }
 
-func (r *mockTokenReader) Offset() int64 {
-	return r.offset
-}
-
-func newMockDecoder(tokens ...Token) *Unmarshaler {
-	r := &mockTokenReader{tokens: tokens}
-	return &Unmarshaler{scan: r, tok: nil, dec: &textDecoder{}, text: true}
-}
-
-func TestEOF(t *testing.T) {
-	var res struct{}
-	dec := newMockDecoder()
-	if dec.Unmarshal(&res) != io.EOF {
-		t.Fatalf("Expected EOF")
+func TestTextUUID(t *testing.T) {
+	d := &textDecoder{}
+	for _, c := range []struct {
+		val      []byte
+		expected string
+	}{
+		{val: nil, expected: "00000000000000000000000000000000"},
+		{val: []byte(""), expected: "00000000000000000000000000000000"},
+		{val: []byte("6d1e8348-df64-486b-bf4e-afe049dc3b83"), expected: "6d1e8348df64486bbf4eafe049dc3b83"},
+		{val: []byte("6d1e8348df64486bbf4eafe049dc3b83"), expected: "6d1e8348df64486bbf4eafe049dc3b83"},
+	} {
+		got, err := d.uuid(c.val)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.String() != c.expected {
+			t.Fatalf("Expected %s, got %s", c.expected, got)
+		}
 	}
 }
 
-func TestToken(t *testing.T) {
-	dec := newMockDecoder(1)
-	tok, err := dec.token()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tok != 1 {
-		t.Fatalf("Expected token to equal 1, got %s", tok)
-	}
-}
-
-func TestNext(t *testing.T) {
-	dec := newMockDecoder(1)
-	err := dec.next()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if dec.tok != 1 {
-		t.Fatalf("Expected token to equal 1, got %s", dec.tok)
-	}
-}
-
-func TestInvalidKey(t *testing.T) {
-	var dst string
-	dec := newMockDecoder(Key("a"))
-	err := dec.Unmarshal(&dst)
-	if !errorContains(err, "Invalid LLSD: unexpected Key") {
-		t.Errorf("unexpected error: %v", err)
+func TestBinary(t *testing.T) {
+	d := textDecoder{}
+	for _, c := range []struct {
+		val      []byte
+		expected string
+		encoding string
+		err      string
+	}{
+		{val: nil, expected: ""},
+		{val: []byte("42696E6172792064617461"), expected: "Binary data", encoding: ""},
+		{val: []byte("42696E6172792064617461"), expected: "Binary data", encoding: "base16"},
+		{val: []byte("QmluYXJ5IGRhdGE="), expected: "Binary data", encoding: "base64"},
+		{val: []byte("6>:=GEd8d<@<>o"), expected: "Binary data", encoding: "base85"},
+		{val: []byte("f"), encoding: "a", err: "Unknown encoding \"a\""},
+	} {
+		got, err := d.binary(c.val, c.encoding)
+		if !errorContains(err, c.err) {
+			t.Fatal(err)
+		}
+		if string(bytes.Trim(got, "\x00")) != c.expected {
+			t.Fatalf("Expected %s, got %s", c.expected, got)
+		}
 	}
 }
 
-func TestInvalidMap(t *testing.T) {
-	var dst struct{ A string }
-	dec := newMockDecoder(MapStart{}, Key("A"), MapEnd{})
-	err := dec.Unmarshal(&dst)
-	if !errorContains(err, "Invalid LLSD: unexpected MapEnd") {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	dec = newMockDecoder(MapStart{}, Key("A"), Key("B"), MapEnd{})
-	err = dec.Unmarshal(&dst)
-	if !errorContains(err, "Invalid LLSD: unexpected Key") {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestTruncateArray(t *testing.T) {
-	dst := [2]any{}
-	dec := newMockDecoder(ArrayStart{}, sInt(1), sBinary([]byte("Binary data")), sInt(2), ArrayEnd{})
-	if err := dec.Unmarshal(&dst); err != nil {
-		t.Fatal(err)
-	}
-	if dst[0].(int32) != 1 {
-		t.Fatalf("Expected dst[0] to equal %d but got %v", 1, dst[0])
-	}
-	if !bytes.Equal(dst[1].([]byte), []byte("Binary data")) {
-		t.Fatalf("Expected dst[1] to equal \"Binary data\" but got %v", dst[1])
+func TestBoolean(t *testing.T) {
+	d := textDecoder{}
+	for _, c := range []struct {
+		val      []byte
+		expected bool
+		err      string
+	}{
+		{val: nil, expected: false},
+		{val: []byte("0"), expected: false},
+		{val: []byte("1"), expected: true},
+		{val: []byte("true"), expected: true},
+		{val: []byte("false"), expected: false},
+		{val: []byte("a"), err: "Invalid boolean value a"},
+	} {
+		got, err := d.boolean(c.val)
+		if !errorContains(err, c.err) {
+			t.Fatal(err)
+		}
+		if got != c.expected {
+			t.Fatalf("Expected %v, got %v", c.expected, got)
+		}
 	}
 }
