@@ -57,7 +57,7 @@ func testScan(t *testing.T, scanner TokenReader, expected []Token) {
 			if expectedScalar.Type != gotScalar.Type {
 				t.Fatalf("Expected element %d to have scalar type %s but got %s", i, expectedScalar.Type, gotScalar.Type)
 			}
-			if bytes.Compare(expectedScalar.Data, gotScalar.Data) != 0 {
+			if !bytes.Equal(expectedScalar.Data, gotScalar.Data) {
 				t.Fatalf("Expected element %d to have value \"%s\" but got \"%s\"", i, expectedScalar.Data, gotScalar.Data)
 			}
 			if len(expectedScalar.Attr) > 0 {
@@ -245,10 +245,10 @@ func TestXMLBasicUnmarshal(t *testing.T) {
 	if dst.Boolean != true {
 		t.Fatalf("Expected dst.Boolean to equal \"true\" but got \"%v\"", dst.Boolean)
 	}
-	if bytes.Compare(dst.Binary, []byte("Binary data")) != 0 {
+	if !bytes.Equal(dst.Binary, []byte("Binary data")) {
 		t.Fatalf("Expected dst.Binary to equal \"Binary data\" but got \"%s\"", dst.Binary)
 	}
-	if bytes.Compare(dst.BinaryArr[:], []byte("Binary data")) != 0 {
+	if !bytes.Equal(dst.BinaryArr[:], []byte("Binary data")) {
 		t.Fatalf("Expected dst.Binary to equal \"Binary data\" but got \"%s\"", dst.BinaryArr)
 	}
 	if dst.URI != "http://example.org" {
@@ -342,7 +342,7 @@ func TestXMLParseBinary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if bytes.Compare(dst.Slice, []byte("Binary data")) != 0 {
+	if !bytes.Equal(dst.Slice, []byte("Binary data")) {
 		t.Fatalf("Expected dst.Slice to equal \"Binary data\" got \"%s\"", string(dst.Slice))
 	}
 	if dst.Int32 != -3 {
@@ -502,7 +502,7 @@ func TestXMLUnmarshalMap(t *testing.T) {
 	if dst3["a"] != "a" {
 		t.Fatalf("Expected dst3[a] to equal \"a\" but got %s", dst3["a"])
 	}
-	if bytes.Compare(dst3["b"].([]byte), []byte("Binary data")) != 0 {
+	if !bytes.Equal(dst3["b"].([]byte), []byte("Binary data")) {
 		t.Fatalf("Expected dst3[b] to equal \"b\" but got %s", dst3["b"])
 	}
 }

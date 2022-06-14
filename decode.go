@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -142,7 +141,7 @@ func (d *textDecoder) binary(c []byte, encoding string) ([]byte, error) {
 		_, _, err := ascii85.Decode(dst, c, true)
 		return dst, err
 	default:
-		return nil, errors.New(fmt.Sprintf("Unknown encoding \"%s\"", encoding))
+		return nil, fmt.Errorf("Unknown encoding \"%s\"", encoding)
 	}
 }
 
@@ -155,7 +154,7 @@ func (d *textDecoder) boolean(c []byte) (bool, error) {
 	} else if string(c) == "0" || string(c) == "false" {
 		return false, nil
 	}
-	return false, errors.New(fmt.Sprintf("Invalid boolean value %s", c))
+	return false, fmt.Errorf("Invalid boolean value %s", c)
 }
 
 func (d *textDecoder) date(c []byte) (time.Time, error) {

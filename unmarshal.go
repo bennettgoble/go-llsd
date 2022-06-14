@@ -232,9 +232,9 @@ func (u *Unmarshaler) object(v reflect.Value) error {
 				return err
 			}
 
-			switch tok.(type) {
+			switch tok := tok.(type) {
 			case Key:
-				key = string(tok.(Key))
+				key = string(tok)
 			case MapEnd:
 				// Done reading object
 				return nil
@@ -246,7 +246,7 @@ func (u *Unmarshaler) object(v reflect.Value) error {
 			field, ok := fields[key]
 			if !ok {
 				if u.DisallowUnknownFields {
-					return errors.New(fmt.Sprintf("LLSD: Unknown field %q", key))
+					return fmt.Errorf("LLSD: Unknown field %q", key)
 				}
 				// Skip unknown field (And possibly skip past invalid JSON...)
 				if err = u.next(); err != nil {
@@ -279,9 +279,9 @@ func (u *Unmarshaler) object(v reflect.Value) error {
 				return err
 			}
 
-			switch tok.(type) {
+			switch tok := tok.(type) {
 			case Key:
-				key = string(tok.(Key))
+				key = string(tok)
 			case MapEnd:
 				// Done reading object
 				return nil

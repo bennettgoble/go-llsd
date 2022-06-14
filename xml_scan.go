@@ -2,7 +2,6 @@ package llsd
 
 import (
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -34,7 +33,7 @@ func (s *XMLScanner) charData() ([]byte, error) {
 		// Handle self-closing elements
 		return nil, nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Invalid LLSD: got unexpected %s", reflect.TypeOf(t)))
+		return nil, fmt.Errorf("Invalid LLSD: got unexpected %s", reflect.TypeOf(t))
 	}
 }
 
@@ -86,7 +85,7 @@ func (s *XMLScanner) Token() (Token, error) {
 			scalarType, ok := scalarTypes[ty.Name.Local]
 
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("Unknown LLSD type \"%s\"", ty.Name.Local))
+				return nil, fmt.Errorf("Unknown LLSD type \"%s\"", ty.Name.Local)
 			}
 
 			// Copy data so that it is not overwritten when advancing past end element
@@ -122,7 +121,7 @@ func (s *XMLScanner) Token() (Token, error) {
 		case "llsd":
 			return s.Token()
 		default:
-			return nil, errors.New(fmt.Sprintf("Invalid LLSD: unexpected EndElement %s", ty.Name.Local))
+			return nil, fmt.Errorf("Invalid LLSD: unexpected EndElement %s", ty.Name.Local)
 		}
 	case xml.Comment, xml.ProcInst, xml.CharData:
 		// Skip comments, (<!-- ... -->)
@@ -130,6 +129,6 @@ func (s *XMLScanner) Token() (Token, error) {
 		// Skip character data between elements such as whitespace
 		return s.Token()
 	default:
-		return nil, errors.New(fmt.Sprintf("Invalid LLSD. Unexpected %s at %d", reflect.TypeOf(tok), s.Offset()))
+		return nil, fmt.Errorf("Invalid LLSD. Unexpected %s at %d", reflect.TypeOf(tok), s.Offset())
 	}
 }

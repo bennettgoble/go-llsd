@@ -2,7 +2,6 @@ package llsd
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -95,13 +94,13 @@ func (s *BinaryScanner) Token() (Token, error) {
 				}
 				header := "<" + string(buf)
 				if header != BinaryHeader {
-					return nil, errors.New(fmt.Sprintf("Invalid LLSD: unrecognized header %s", header))
+					return nil, fmt.Errorf("Invalid LLSD: unrecognized header %s", header)
 				}
 				continue
 			}
 			fallthrough
 		default:
-			return nil, errors.New(fmt.Sprintf("Invalid LLSD %s", op))
+			return nil, fmt.Errorf("Invalid LLSD %s", op)
 		}
 
 	}

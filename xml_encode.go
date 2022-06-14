@@ -236,15 +236,11 @@ func (c *XMLEncoder) marshalValue(v reflect.Value, info *fieldInfo) error {
 		c.writeString("</boolean>")
 	default:
 		vi := v.Interface()
-		switch vi.(type) {
+		switch vi := vi.(type) {
 		case UUID:
 			c.writeIndent()
 			c.writeString("<uuid>")
-			u, ok := vi.(UUID)
-			if !ok {
-				return errors.New("Unable to cast UUID value")
-			}
-			c.writeString(u.String())
+			c.writeString(vi.String())
 			c.writeString("</uuid>")
 		case URL:
 			c.writeIndent()
@@ -256,22 +252,14 @@ func (c *XMLEncoder) marshalValue(v reflect.Value, info *fieldInfo) error {
 		case url.URL:
 			c.writeIndent()
 			c.writeString("<uri>")
-			url, ok := vi.(url.URL)
-			if !ok {
-				return errors.New("Unable to cast url.URL value")
-			}
-			if err := xml.EscapeText(c.w, []byte(url.String())); err != nil {
+			if err := xml.EscapeText(c.w, []byte(vi.String())); err != nil {
 				return err
 			}
 			c.writeString("</uri>")
 		case time.Time:
 			c.writeIndent()
 			c.writeString("<date>")
-			t, ok := vi.(time.Time)
-			if !ok {
-				return errors.New("Unable to cast time.Time value")
-			}
-			c.writeString(t.Format(time.RFC3339))
+			c.writeString(vi.Format(time.RFC3339))
 			c.writeString("</date>")
 		default:
 			return &MarshalTypeError{Type: v.Type()}
