@@ -90,9 +90,9 @@ func (s *XMLScanner) Token() (Token, error) {
 			}
 
 			// Copy data so that it is not overwritten when advancing past end element
-			b, err := s.charData()
-			data := make([]byte, len(b))
-			copy(data, b)
+			innerText, err := s.charData()
+			data := make([]byte, len(innerText))
+			copy(data, innerText)
 
 			// Map XML attributes (<binary encoding="base64">)
 			attr := map[string]string{}
@@ -104,8 +104,12 @@ func (s *XMLScanner) Token() (Token, error) {
 				return nil, err
 			}
 
-			// Advanced past EndElement, which is always provided by go's xml decoding
-			_, err = s.dec.Token()
+			// If innerText is nil then the element is self-closing and we have
+			// already advanced past its EndElement.
+			if innerText != nil {
+				// Advanced past EndElement, which is always provided by go's xml decoding
+				_, err = s.dec.Token()
+			}
 
 			return Scalar{Type: scalarType, Data: data, Attr: attr}, err
 		}

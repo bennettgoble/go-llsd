@@ -221,6 +221,7 @@ func TestXMLBasicUnmarshal(t *testing.T) {
 		<key>URI</key><uri>http://example.org</uri>
 		<key>Binary</key><binary>42696e6172792064617461</binary>
 		<key>BinaryArr</key><binary>42696e6172792064617461</binary>
+		<key>Undef</key><undef/><key>StringAfterUndef</key><string>A</string>
 		<key>Object</key>
 		<map>
 		  <key>B</key><string>b</string>
