@@ -175,10 +175,9 @@ if err != nil {
 ## TODO
 
 - [x] Marshaling
-- [ ] Improve documentation, generate godocs (github pages)
 - [x] Add basic benchmarking
 - [ ] Parameterize test suite
-- [ ] Add support for binary
+- [x] Add support for binary
 - [ ] Add support for notation 
 
 [llsd]: https://wiki.secondlife.com/wiki/LLSD
