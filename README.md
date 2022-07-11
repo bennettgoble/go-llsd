@@ -172,13 +172,5 @@ if err != nil {
 - Using fixed-length arrays causes extra values to be ignored 
 - nullptr is serialized as `undef`
 
-## TODO
-
-- [x] Marshaling
-- [x] Add basic benchmarking
-- [ ] Parameterize test suite
-- [x] Add support for binary
-- [ ] Add support for notation 
-
 [llsd]: https://wiki.secondlife.com/wiki/LLSD
 [json]: https://pkg.go.dev/encoding/json#Marshal
